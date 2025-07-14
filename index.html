@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INSIGHT STUDIO | 全屏设计画廊</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 防止用户选择文本 */
+            -webkit-user-drag: none; /* 防止拖拽元素 */
+        }
+        
+        body {
+            background-color: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Poppins', 'Arial Rounded MT Bold', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none; /* 防止触摸操作 */
+        }
+        
+        /* 页面容器 - 全屏自适应 (移除最大宽高限制) */
+        .page-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* 背景图片 */
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://i.ibb.co/Z6gDSvMm/image.png') no-repeat center center;
+            background-size: cover;
+            z-index: 1;
+        }
+        
+        /* 黑色遮罩层 - 60%透明度 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 2;
+        }
+        
+        /* 顶部遮罩层 */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 9.26vh; /* 100px in 1080p */
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 3;
+        }
+        
+        /* 品牌标志 - 修改为INSIGHT STUDIO */
+        .logo {
+            position: absolute;
+            top: 3.24vh; /* 35px in 1080p */
+            left: 1.82vw; /* 35px in 1920p */
+            font-size: clamp(20px, 1.56vw, 30px);
+            line-height: 1;
+            height: auto;
+            color: #FF0066;
+            letter-spacing: 0.5px;
+            z-index: 4;
+            text-transform: uppercase;
+            font-weight: 400; /* 正常粗细 */
+            font-family: 'Are You Okay', 'Poppins', 'Arial Rounded MT Bold', sans-serif;
+            pointer-events: none; /* 防止事件穿透 */
+        }
+        
+        /* 白色竖直线 */
+        .vertical-line {
+            position: absolute;
+            left: 13.02vw; /* 250px in 1920p */
+            bottom: 4.63vh; /* 50px in 1080p */
+            width: 0.104vw; /* 2px in 1920p */
+            height: 78.7vh; /* 850px in 1080p */
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), white, rgba(255,255,255,0.3));
+            z-index: 4;
+            pointer-events: none;
+        }
+        
+        /* 图片分类按钮 */
+        .category-buttons {
+            position: absolute;
+            left: 0;
+            top: 16.67vh; /* 180px in 1080p */
+            width: 13.02vw; /* 250px in 1920p */
+            height: 65.74vh; /* 710px in 1080p */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+        
+        .category-btn {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 200;
+            font-size: clamp(10px, 0.81vw, 15.5px);
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+            padding: 0.55vh 0; /* 6px in 1080p */
+            position: relative;
+        }
+        
+        .category-btn:hover {
+            color: white;
+            font-weight: 400;
+            transform: translateX(5px);
+        }
+        
+        .category-btn::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 1px;
+            background: white;
+            transition: width 0.3s ease;
+        }
+        
+        .category-btn:hover::after {
+            width: 100%;
+        }
+        
+        .category-btn.active {
+            color: white;
+            font-weight: 400;
+        }
+        
+        /* 左下角版权文字 */
+        .design-credit {
+            position: absolute;
+            left: 0;
+            bottom: 4.63vh; /* 50px in 1080p */
+            width: 13.02vw; /* 250px in 1920p */
+            z-index: 5;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 200;
+            font-size: clamp(8px, 0.65vw, 12.5px);
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+        
+        /* 图片瀑布流区域 */
+        .gallery-container {
+            position: absolute;
+            left: 16.15vw; /* 310px in 1920p */
+            bottom: 4.63vh; /* 50px in 1080p */
+            width: 80.73vw; /* 1550px in 1920p */
+            height: 78.7vh; /* 850px in 1080p */
+            overflow-y: auto;
+            z-index: 4;
+            padding-right: 1.3vw; /* 25px in 1920p */
+        }
+        
+        /* 瀑布流布局 */
+        .masonry {
+            column-count: 5;
+            column-gap: 1.3vw; /* 25px in 1920p */
+        }
+        
+        .gallery-item {
+            width: 100%;
+            border-radius: 1.3vw; /* 25px in 1920p */
+            overflow: hidden;
+            margin-bottom: 1.3vw; /* 25px in 1920p */
+            display: inline-block;
+            position: relative;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .gallery-item.visible {
+            opacity: 1;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* 图片样式 */
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 1.3vw; /* 25px in 1920p */
+            transition: transform 0.3s ease;
+            pointer-events: none; /* 防止事件穿透 */
+        }
+        
+        .gallery-item:hover img {
+            transform: scale(1.03);
+        }
+        
+        /* 图片保护覆盖层 */
+        .image-protector {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: default;
+        }
+        
+        /* 滚动条样式 */
+        .gallery-container::-webkit-scrollbar {
+            width: 0.42vw; /* 8px in 1920p */
+        }
+        
+        .gallery-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        
+        .gallery-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+        
+        .gallery-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .category-buttons .category-btn {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .category-buttons .category-btn:nth-child(1) { animation-delay: 0.1s; }
+        .category-buttons .category-btn:nth-child(2) { animation-delay: 0.2s; }
+        .category-buttons .category-btn:nth-child(3) { animation-delay: 0.3s; }
+        .category-buttons .category-btn:nth-child(4) { animation-delay: 0.4s; }
+        .category-buttons .category-btn:nth-child(5) { animation-delay: 0.5s; }
+        .category-buttons .category-btn:nth-child(6) { animation-delay: 0.6s; }
+        .category-buttons .category-btn:nth-child(7) { animation-delay: 0.7s; }
+        .category-buttons .category-btn:nth-child(8) { animation-delay: 0.8s; }
+        .category-buttons .category-btn:nth-child(9) { animation-delay: 0.9s; }
+        .category-buttons .category-btn:nth-child(10) { animation-delay: 1.0s; }
+        .category-buttons .category-btn:nth-child(11) { animation-delay: 1.1s; }
+        .category-buttons .category-btn:nth-child(12) { animation-delay: 1.2s; }
+        .category-buttons .category-btn:nth-child(13) { animation-delay: 1.3s; }
+        
+        /* 加载指示器 */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: clamp(14px, 1.04vw, 20px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #FF0066;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1600px) {
+            .masonry {
+                column-count: 4;
+            }
+        }
+        
+        @media (max-width: 1366px) {
+            .masonry {
+                column-count: 4;
+            }
+        }
+        
+        @media (max-width: 1280px) {
+            .masonry {
+                column-count: 3;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .masonry {
+                column-count: 3;
+            }
+            
+            .category-buttons {
+                top: 12vh;
+            }
+            
+            .gallery-container {
+                left: 14vw;
+                width: 82vw;
+            }
+            
+            .vertical-line {
+                left: 12vw;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .masonry {
+                column-count: 2;
+            }
+            
+            .category-buttons {
+                top: 10vh;
+                height: 60vh;
+            }
+            
+            .vertical-line {
+                height: 70vh;
+                left: 11vw;
+            }
+            
+            .gallery-container {
+                height: 70vh;
+                left: 12vw;
+                width: 84vw;
+            }
+            
+            .design-credit {
+                font-size: 10px;
+            }
+        }
+        
+        @media (max-height: 800px) {
+            .category-buttons {
+                height: 60vh;
+            }
+            
+            .vertical-line {
+                height: 70vh;
+            }
+            
+            .gallery-container {
+                height: 70vh;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .category-buttons {
+                height: 55vh;
+            }
+            
+            .vertical-line {
+                height: 65vh;
+            }
+            
+            .gallery-container {
+                height: 65vh;
+            }
+        }
+        
+        /* 全屏提示 */
+        .fullscreen-hint {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .fullscreen-hint svg {
+            width: 20px;
+            height: 20px;
+            fill: #FF0066;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        /* 全屏按钮 */
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .fullscreen-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        
+        /* 图片加载错误占位符 */
+        .image-error {
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            pointer-events: none;
+        }
+        
+        /* 下载保护提示 */
+        .protection-alert {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    <div class="fullscreen-hint">
+        <svg viewBox="0 0 24 24">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+        <span>按F11键或点击右下角按钮进入全屏模式</span>
+    </div>
+    
+    <div class="page-container">
+        <!-- 背景图片 -->
+        <div class="background-image"></div>
+        
+        <!-- 黑色遮罩层 - 60%透明度 -->
+        <div class="overlay"></div>
+        
+        <!-- 顶部遮罩层 -->
+        <div class="top-bar"></div>
+        
+        <!-- 品牌标志 - 更新为 INSIGHT STUDIO -->
+        <div class="logo">INSIGHT STUDIO</div>
+        
+        <!-- 白色竖直线 -->
+        <div class="vertical-line"></div>
+        
+        <!-- 图片分类按钮 -->
+        <div class="category-buttons">
+            <div class="category-btn" data-category="all">Browse All</div>
+            <div class="category-btn" data-category="living">Living</div>
+            <div class="category-btn" data-category="dining">Dining</div>
+            <div class="category-btn" data-category="kitchen">Kitchen</div>
+            <div class="category-btn" data-category="bath">Bath</div>
+            <div class="category-btn" data-category="bedroom">Bedroom</div>
+            <div class="category-btn" data-category="closets">Closets</div>
+            <div class="category-btn" data-category="entry">Entry</div>
+            <div class="category-btn" data-category="outdoor">Outdoor</div>
+            <div class="category-btn" data-category="commercial">Commercial</div>
+            <div class="category-btn" data-category="lighting">Lighting</div>
+            <div class="category-btn" data-category="closeup">Close-up</div>
+            <div class="category-btn" data-category="others">Others</div>
+        </div>
+        
+        <!-- 左下角版权文字 -->
+        <div class="design-credit">Web Design by Suki Leung</div>
+        
+        <!-- 图片瀑布流区域 -->
+        <div class="gallery-container">
+            <div class="masonry" id="masonry-grid">
+                <!-- 图片将由JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <div>加载图片库中...</div>
+        </div>
+    </div>
+    
+    <div class="fullscreen-btn">
+        <svg viewBox="0 0 24 24">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+    </div>
+    
+    <div class="protection-alert" id="protection-alert">
+        图片下载功能已禁用
+    </div>
+    
+    <script>
+        // 防止键盘快捷键保存图片
+        document.addEventListener('keydown', function(e) {
+            // 禁用 Ctrl+S, Ctrl+Shift+S, Ctrl+C
+            if ((e.ctrlKey && e.key === 's') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'S') ||
+                (e.ctrlKey && e.key === 'c')) {
+                e.preventDefault();
+                showProtectionAlert();
+            }
+        });
+
+        // 显示保护提示
+        function showProtectionAlert() {
+            const alert = document.getElementById('protection-alert');
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 2000);
+        }
+
+        // 更新后的灯光设计图片 (原始链接)
+        const lightingImages = [
+            "https://i.ibb.co/7dzM6yfs/3869644278.png",
+            "https://i.ibb.co/pjqbqMf4/199555823.png",
+            "https://i.ibb.co/sdZQGVd6/4073128653.png",
+            "https://i.ibb.co/yc2pQm5H/4149280730.png",
+            "https://i.ibb.co/F4pM32Sq/251536530.png",
+            "https://i.ibb.co/zHLWF3HM/370017695.png",
+            "https://i.ibb.co/jP8D2qqh/843865940.png",
+            "https://i.ibb.co/MyWH6pdG/2683696697.png",
+            "https://i.ibb.co/twXWRPnZ/3907401330.png",
+            "https://i.ibb.co/1fs7K4mc/500583186.png",
+            "https://i.ibb.co/B5Lhn9M5/1596162998.png",
+            "https://i.ibb.co/5XkQB1GX/1750183681.png",
+            "https://i.ibb.co/JRxsx2rB/4120280575.png",
+            "https://i.ibb.co/FbdFKkDN/2523248951.png",
+            "https://i.ibb.co/BV6frqRk/3255912221.png",
+            "https://i.ibb.co/kPqg4Tb/297301334.png",
+            "https://i.ibb.co/vCD7x28P/418318500.png",
+            "https://i.ibb.co/20rVjn5y/962413776.png",
+            "https://i.ibb.co/SXcxN0TZ/1953951571.png",
+            "https://i.ibb.co/nsVqFJWT/1725471842.png",
+            "https://i.ibb.co/ZzCfDMZq/3143576733.png",
+            "https://i.ibb.co/S4y7dB1M/3372050957.png",
+            "https://i.ibb.co/CptWPkfC/3923799395.png",
+            "https://i.ibb.co/zWJhT4mq/3937831796.png",
+            "https://i.ibb.co/ynhcyvt9/4090161899.png",
+            "https://i.ibb.co/0R253LP0/4139702018.png",
+            "https://i.ibb.co/xtd0dDsq/374534998.jpg",
+            "https://i.ibb.co/Pvmd2M7P/425551353.png",
+            "https://i.ibb.co/YFBT3jDq/496747269.png",
+            "https://i.ibb.co/B56M6ctS/617207784.png",
+            "https://i.ibb.co/4gXfNVFf/779054656.png",
+            "https://i.ibb.co/JWgWqcG9/819861012.png",
+            "https://i.ibb.co/q3TX52Fr/893616989.png",
+            "https://i.ibb.co/d012KGrF/992533890.png",
+            "https://i.ibb.co/Q347NVMf/1097507214.png",
+            "https://i.ibb.co/4wFYtkzw/1410936522.png",
+            "https://i.ibb.co/F9n3zMz/1629990172.png",
+            "https://i.ibb.co/LDSLdkvs/1630284848.png",
+            "https://i.ibb.co/Hf478WBd/1726946713.png",
+            "https://i.ibb.co/PZsJXDn5/1894937963.png",
+            "https://i.ibb.co/pBV22L5n/2273493429.png",
+            "https://i.ibb.co/6JJydSRz/3293871934.png",
+            "https://i.ibb.co/KcTRZQry/3300821896.png",
+            "https://i.ibb.co/tMmz06Dm/3364311475.png",
+            "https://i.ibb.co/k2LtZnmn/3695563577.png",
+            "https://i.ibb.co/dsqGcjyK/3803450248.png",
+            "https://i.ibb.co/TMYF55Ry/3963234409.png",
+            "https://i.ibb.co/VRLH3ck/3458253297.png",
+            "https://i.ibb.co/tgFRvS0/198038702.png",
+            "https://i.ibb.co/ynBQ4QNt/345065582.png",
+            "https://i.ibb.co/b5ChMJFs/627846367.png",
+            "https://i.ibb.co/LhvkhWrY/908038083.png",
+            "https://i.ibb.co/0R9pcy7y/1616276962.png",
+            "https://i.ibb.co/Qws065B/1779001818.png",
+            "https://i.ibb.co/jxBqRQx/1870642589.png",
+            "https://i.ibb.co/CKNFrFRs/1910847765.png",
+            "https://i.ibb.co/Xf6CjbRW/1922532938.png",
+            "https://i.ibb.co/MDwbYb4k/2842048606.png",
+            "https://i.ibb.co/0RJz3xXS/3502171252.png",
+            "https://i.ibb.co/nM0hwtTq/3607199116.png",
+            "https://i.ibb.co/ksjTpH9T/2497604532.png",
+            "https://i.ibb.co/QjxV3X4c/2642099097.png",
+            "https://i.ibb.co/cKc7LVwK/2766810610.png",
+            "https://i.ibb.co/5hpKNXwC/2900995745.png",
+            "https://i.ibb.co/HfDbHsgh/3185917617.png",
+            "https://i.ibb.co/KcYyWtqt/4046524690.png",
+            "https://i.ibb.co/TB5MXNSF/4082212449.png"
+        ];
+        
+        const bathImages = [
+            "https://i.ibb.co/5x6DYwb7/63600856.png",
+            "https://i.ibb.co/RpW2KJXP/64609817.png",
+            "https://i.ibb.co/JwdcKcpC/171433414.png",
+            "https://i.ibb.co/kVYDTq79/178111777.png",
+            "https://i.ibb.co/C561J63Y/224617029.png",
+            "https://i.ibb.co/5WKJBckY/364873020.png",
+            "https://i.ibb.co/pFPbwpW/498703805.png",
+            "https://i.ibb.co/wr8y6HCF/810106711.png",
+            "https://i.ibb.co/tPDJqqRV/825030494.png",
+            "https://i.ibb.co/fVWynPNZ/1042327550.png",
+            "https://i.ibb.co/DHw0qX1k/1050030034.png",
+            "https://i.ibb.co/rGd2GdcP/1068814438.png",
+            "https://i.ibb.co/rfygDm8M/1263244248.png",
+            "https://i.ibb.co/Mz317wD/1311194189.png",
+            "https://i.ibb.co/XrGNQSvr/1442915152.png",
+            "https://i.ibb.co/RpJf99rw/1679768792.png",
+            "https://i.ibb.co/Qj8nFs7P/1691308358.png",
+            "https://i.ibb.co/DDsy6Jh5/1713624667.png",
+            "https://i.ibb.co/fV0DGkDf/1746732437.png",
+            "https://i.ibb.co/27dpX4pH/1772431277.png",
+            "https://i.ibb.co/tP3n7z9Q/1919888439.png",
+            "https://i.ibb.co/yn4WZ2DL/1973174188.png",
+            "https://i.ibb.co/7JPnpgWt/2115567435.png",
+            "https://i.ibb.co/CsNSM25C/2135102035.png",
+            "https://i.ibb.co/KpjmmL5v/2239960581.png",
+            "https://i.ibb.co/mVvf66MF/2352921396.png",
+            "https://i.ibb.co/gZHXpVst/2738873366.png",
+            "https://i.ibb.co/WNdYQSmG/2881175341.png",
+            "https://i.ibb.co/C3NHc3sj/2883006067.png",
+            "https://i.ibb.co/BHgTM09t/2883006068.png",
+            "https://i.ibb.co/j9YtJrjY/2913694102.png",
+            "https://i.ibb.co/7xChjv9Q/2915786255.png",
+            "https://i.ibb.co/DPfDKM7w/3007383411.png",
+            "https://i.ibb.co/MDH5VYj8/3008893724.png",
+            "https://i.ibb.co/XxN5pH9v/3198426690.png",
+            "https://i.ibb.co/DP2qD2js/3356471411.png",
+            "https://i.ibb.co/3y6MYbxt/3495992125.png",
+            "https://i.ibb.co/HDPHbK9q/3515211597.png",
+            "https://i.ibb.co/0RhPkfhW/3914715675.png",
+            "https://i.ibb.co/QjrKNhQs/3958831145.png",
+            "https://i.ibb.co/hRndCNfK/4152063111.png",
+            "https://i.ibb.co/Ps2w2JdQ/140814184.png",
+            "https://i.ibb.co/JWdNDLXn/1429383520.png",
+            "https://i.ibb.co/fYvpn6jQ/3872028247.png",
+            "https://i.ibb.co/8LryzF9c/11752792.png",
+            "https://i.ibb.co/zhRVNqkj/40797795.png",
+            "https://i.ibb.co/84MrKfpj/69145845.png",
+            "https://i.ibb.co/9mb3LdXs/118697040.png",
+            "https://i.ibb.co/Fk6sjbHP/173940283.png",
+            "https://i.ibb.co/Zz782tCx/230189683.png",
+            "https://i.ibb.co/1GqV23cv/234904262.png",
+            "https://i.ibb.co/7JmDkLpZ/240674460.png",
+            "https://i.ibb.co/84rcmj54/244862418.png",
+            "https://i.ibb.co/d0b4N3N7/270992323.png",
+            "https://i.ibb.co/j99c0g23/309420669.png",
+            "https://i.ibb.co/pj64MQZ9/327233001.png",
+            "https://i.ibb.co/sd8nSQVQ/397442830.png",
+            "https://i.ibb.co/dwsGxQGH/437236115.png",
+            "https://i.ibb.co/dwDr9vZt/617209168.png",
+            "https://i.ibb.co/bMmPsmWh/620168240.png",
+            "https://i.ibb.co/zWJJqP3k/638180813.png",
+            "https://i.ibb.co/s9kZYg14/643460300.png",
+            "https://i.ibb.co/0R179kT2/711113504.png",
+            "https://i.ibb.co/x8HDnxXT/721560584.png",
+            "https://i.ibb.co/KzBqffxH/735856707.png",
+            "https://i.ibb.co/TDHMtyCw/749274527.png",
+            "https://i.ibb.co/zhkM9pKg/905004672.png",
+            "https://i.ibb.co/cSxZxv3P/1078396056.png",
+            "https://i.ibb.co/mrD195m2/1113142382.png",
+            "https://i.ibb.co/w5J5bnj/1122219703.png",
+            "https://i.ibb.co/Jw1n8xYn/1133143095.png",
+            "https://i.ibb.co/qMFGvpKc/1179816437.png",
+            "https://i.ibb.co/nNWXMzMy/1193338512.png",
+            "https://i.ibb.co/Y4PmbfnV/1276121394.png",
+            "https://i.ibb.co/Pz9xPrHT/1390315071.png",
+            "https://i.ibb.co/5gK05LmL/1402300869.png",
+            "https://i.ibb.co/gbCvDYwb/1499605293.png",
+            "https://i.ibb.co/TDjdLvs4/1534251559.png",
+            "https://i.ibb.co/ZzrrFvXD/1589099477.png",
+            "https://i.ibb.co/rfHBr3Qv/1630816741.png",
+            "https://i.ibb.co/XkZzw5hF/1632244508.png",
+            "https://i.ibb.co/B2B6mjFC/1667886042.png",
+            "https://i.ibb.co/v4Rwt7Bs/1669170561.png",
+            "https://i.ibb.co/RGk4KPpD/1692724066.png",
+            "https://i.ibb.co/4RZxwm23/1693758540.png",
+            "https://i.ibb.co/4cqNNKq/1782245643.png",
+            "https://i.ibb.co/9HZn837y/1815667542.png",
+            "https://i.ibb.co/JW2pdx8h/1920543856.png",
+            "https://i.ibb.co/YzCjSmb/1927274696.png",
+            "https://i.ibb.co/27m1rWfc/1939915010.png",
+            "https://i.ibb.co/HTp4h0d8/1982070488.png",
+            "https://i.ibb.co/dsvTqkg5/2001863192.png",
+            "https://i.ibb.co/gn1t2Sw/2037294836.png",
+            "https://i.ibb.co/tMzNCdzb/2081608398.png",
+            "https://i.ibb.co/rRKNJ7Ff/2215923520.png",
+            "https://i.ibb.co/Gf4cJ6Kj/2268225643.png",
+            "https://i.ibb.co/chFHsgw3/2314768334.png",
+            "https://i.ibb.co/gbRSLgnM/2463981596.png",
+            "https://i.ibb.co/YBFtXGC3/2592320526.png",
+            "https://i.ibb.co/YBFtXGC3/2607158155.png",
+            "https://i.ibb.co/QFNtJNpB/2656821491.png",
+            "https://i.ibb.co/JwhVqW6z/2709918180.png",
+            "https://i.ibb.co/v4Y68fhb/2745842762.png",
+            "https://i.ibb.co/S7n18pnq/2753691032.png",
+            "https://i.ibb.co/FbZpHxFk/2776349111.png",
+            "https://i.ibb.co/RG3MsjCQ/2795042989.png",
+            "https://i.ibb.co/SDyxqk2V/2823662163.png",
+            "https://i.ibb.co/fYvV6YfR/2885460355.png",
+            "https://i.ibb.co/rGt4Smdn/2887350741.png",
+            "https://i.ibb.co/xKLZfwX8/2933655531.png",
+            "https://i.ibb.co/nNfdfxfT/2995355893.png",
+            "https://i.ibb.co/XrKKyPy1/3054709761.png",
+            "https://i.ibb.co/TxNrQcdh/3062095130.png",
+            "https://i.ibb.co/4ZJz6DJM/3223969053.png",
+            "https://i.ibb.co/fV2FFSF0/3260677784.png",
+            "https://i.ibb.co/QFNg8nRT/3270671497.png",
+            "https://i.ibb.co/TydGhdb/3286497047.png",
+            "https://i.ibb.co/R4sZdQfQ/3346559893.png",
+            "https://i.ibb.co/WvtCVFfP/3431830530.png",
+            "https://i.ibb.co/dsv9ZRtw/3529175652.png",
+            "https://i.ibb.co/tPh4hmCt/3601183082.png",
+            "https://i.ibb.co/PZb3zr3b/3604405291.png",
+            "https://i.ibb.co/fV9SxqGT/3616932583.png",
+            "https://i.ibb.co/HTgk6BPd/3624010613.png",
+            "https://i.ibb.co/60j1c1Fx/3670476203.png",
+            "https://i.ibb.co/j9t9NVVB/3683547900.png",
+            "https://i.ibb.co/nsNgmVD8/3693081881.png",
+            "https://i.ibb.co/wrKXjRRP/3701234034.png",
+            "https://i.ibb.co/sGxJqsR/3887455064.png",
+            "https://i.ibb.co/v4VGSW5x/3892084362.png",
+            "https://i.ibb.co/5XVzP1Bj/3977114580.png",
+            "https://i.ibb.co/KcL19ySm/4082308498.png",
+            "https://i.ibb.co/GfT3x25C/4222098886.png",
+            "https://i.ibb.co/nM2mGC0Z/4688002588.png",
+            "https://i.ibb.co/q3SDqLR9/542332155.png"
+        ];
+        
+        const kitchenImages = [
+            "https://i.ibb.co/KcDPCnJF/489156330.png",
+            "https://i.ibb.co/twz6mw1t/974421407.png",
+            "https://i.ibb.co/SXLVWKxJ/1796804811.png",
+            "https://i.ibb.co/TMrrgsWw/1905333673.png",
+            "https://i.ibb.co/SX4VLXY8/1944248474.png",
+            "https://i.ibb.co/XxfnDt6N/2261757609.png",
+            "https://i.ibb.co/tpvDqN6V/2578339986.png",
+            "https://i.ibb.co/jvrGRqdV/2829730815.png",
+            "https://i.ibb.co/1Y5CR3b1/3220275216.png",
+            "https://i.ibb.co/x8qvX63S/3432911842.png",
+            "https://i.ibb.co/YBN9y5f6/3088343004.png",
+            "https://i.ibb.co/KjWdSzYw/2447321272.png",
+            "https://i.ibb.co/Fb7LkQ81/2568177.png",
+            "https://i.ibb.co/qVP5KPY/210120791.png",
+            "https://i.ibb.co/v6rkf2js/465592723.png",
+            "https://i.ibb.co/ycdskFwT/668903498.png",
+            "https://i.ibb.co/NX8M8B6/682597574.png",
+            "https://i.ibb.co/n8V8MGCH/714098887.png",
+            "https://i.ibb.co/352QT4y5/869948008.png",
+            "https://i.ibb.co/HT8HHP6H/1067751001.png",
+            "https://i.ibb.co/MxCtYb9T/1179988020.png",
+            "https://i.ibb.co/cSY1nN9S/1189297624.png",
+            "https://i.ibb.co/sJRhLHLF/1304576541.png",
+            "https://i.ibb.co/BVdrXnWz/1504604418.png",
+            "https://i.ibb.co/R4BPqsD5/1533027091.png",
+            "https://i.ibb.co/v6SdB0Vk/1639902721.png",
+            "https://i.ibb.co/vCsg4GGc/1692597013.png",
+            "https://i.ibb.co/7JwrBnk0/1777756547.png",
+            "https://i.ibb.co/PGm0P9Sn/1788058497.png",
+            "https://i.ibb.co/HWrfCgv/1793936086.png",
+            "https://i.ibb.co/1fqBT946/1937209870.png",
+            "https://i.ibb.co/GvsmD3p9/2053086199.png",
+            "https://i.ibb.co/0yV72yCy/2139624442.png",
+            "https://i.ibb.co/N6TwVfXT/2365116641.png",
+            "https://i.ibb.co/27zhXZs2/2759982606.png",
+            "https://i.ibb.co/sd59FQBY/2770387142.png",
+            "https://i.ibb.co/5hMfs761/2881469451.png",
+            "https://i.ibb.co/Ng2ztfXj/2910942611.png",
+            "https://i.ibb.co/KpssVfCP/2912383681.png",
+            "https://i.ibb.co/nNKhkynV/3059995562.png",
+            "https://i.ibb.co/d0pBtMPk/3164450161.png",
+            "https://i.ibb.co/tpPhx5hr/3307923546.png",
+            "https://i.ibb.co/0VFG0L79/3354576880.png",
+            "https://i.ibb.co/KxXtgRMm/3786860293.png",
+            "https://i.ibb.co/cX7rb36h/3881431123.png",
+            "https://i.ibb.co/39V82zL3/3891844783.png",
+            "https://i.ibb.co/7xgcsXhr/3925916898.png",
+            "https://i.ibb.co/pjGxfqQL/3928174169.png",
+            "https://i.ibb.co/Z11vCkgY/3987225603.png",
+            "https://i.ibb.co/0pmXR3LW/3998815848.png",
+            "https://i.ibb.co/k6vp63yC/4067020426.png",
+            "https://i.ibb.co/p6vKdnKV/4284370986.png",
+            "https://i.ibb.co/5gr5CKYk/193069185.png",
+            "https://i.ibb.co/1fCjkc3H/316903646.png",
+            "https://i.ibb.co/HfFLtyR8/470129138.png",
+            "https://i.ibb.co/vCKKSS5s/778501496.png",
+            "https://i.ibb.co/S1hFc0M/1035066567.png",
+            "https://i.ibb.co/8gwSx9dm/1239640543.png",
+            "https://i.ibb.co/PvNznytQ/1603362910.png",
+            "https://i.ibb.co/Wq69Lb2/1986703573.png",
+            "https://i.ibb.co/9k9Hy69C/2060524834.png",
+            "https://i.ibb.co/Jjcgf2wf/2084276845.png",
+            "https://i.ibb.co/qbMvFjh/2289845840.png",
+            "https://i.ibb.co/RTSp4LG9/2297749334.png",
+            "https://i.ibb.co/yccRpzfW/2314503834.png",
+            "https://i.ibb.co/cKQrmXPp/2393361884.png",
+            "https://i.ibb.co/XZ5bFJKx/2476781674.png",
+            "https://i.ibb.co/vxGGKKdM/2546844266.png",
+            "https://i.ibb.co/MkSy7XLR/2584780118.png",
+            "https://i.ibb.co/m5HL5nLn/2679046494.png",
+            "https://i.ibb.co/W4cy7g29/2770461086.png",
+            "https://i.ibb.co/3Y8WHYrP/3018097599.png",
+            "https://i.ibb.co/9kYNHYgM/3032724718.png",
+            "https://i.ibb.co/hRvqh0c2/3114045832.png",
+            "https://i.ibb.co/vvRPFyj9/3371162515.png",
+            "https://i.ibb.co/4yR7jLZ/3439783365.png",
+            "https://i.ibb.co/m5bhtWB4/3507748819.png",
+            "https://i.ibb.co/nvvCN0n/3586431298.png",
+            "https://i.ibb.co/LdkvZXgV/3657314287.png",
+            "https://i.ibb.co/Kj2bL9vB/3715897827.png",
+            "https://i.ibb.co/n8ByfRMG/3873898370.png",
+            "https://i.ibb.co/qM82zB1H/3877852710.png",
+            "https://i.ibb.co/XkXkQ4FR/4028610376.png",
+            "https://i.ibb.co/fYNtvXH3/4119916517.png",
+            "https://i.ibb.co/YrmNgxk/4126694018.png",
+            "https://i.ibb.co/BKSgFNSz/4131812013.png",
+            "https://i.ibb.co/HfXZYf7X/4260251945.png",
+            "https://i.ibb.co/B5zwqgP7/3567988133.png",
+            "https://i.ibb.co/CsY389gw/1173376024.png",
+            "https://i.ibb.co/CsY389gw/2028584457.png"
+        ];
+        
+        const diningImages = [
+            "https://i.ibb.co/ymKTjdwR/63391658.png",
+            "https://i.ibb.co/XkXPhrLv/2251193528.png",
+            "https://i.ibb.co/hFKsGFdG/2834408459.png",
+            "https://i.ibb.co/DHFvHFDf/3895497783.png",
+            "https://i.ibb.co/GBpS4PJ/96142341.png",
+            "https://i.ibb.co/tMn8pjjk/196620192.png",
+            "https://i.ibb.co/gMwcjTPq/618817788.png",
+            "https://i.ibb.co/WNq0Vgk6/790903068.png",
+            "https://i.ibb.co/Y7xr7ygM/950227359.png",
+            "https://i.ibb.co/5gTwVrHn/998369017.png",
+            "https://i.ibb.co/ZzSGgrqG/1256554454.png",
+            "https://i.ibb.co/B2smN1Pk/1257421040.png",
+            "https://i.ibb.co/27h91pfn/1523077320.png",
+            "https://i.ibb.co/GfVc50bZ/1839652684.png",
+            "https://i.ibb.co/bg6yLH6C/1954896521.png",
+            "https://i.ibb.co/rKFCTLWn/2063907790.png",
+            "https://i.ibb.co/vvdwfGHh/2145671424.png",
+            "https://i.ibb.co/VY0ZRQvQ/2361900697.png",
+            "https://i.ibb.co/j9sff5h7/2712754631.png",
+            "https://i.ibb.co/nsb3jbM1/2932232442.png",
+            "https://i.ibb.co/Mk7WQ9bG/3257815422.png",
+            "https://i.ibb.co/Pvz5zT4f/3317063415.png",
+            "https://i.ibb.co/Qv8bVpBK/3318442505.png",
+            "https://i.ibb.co/d0N1HZTS/3378834598.png",
+            "https://i.ibb.co/BhByw31/3419793845.png",
+            "https://i.ibb.co/Zzzpqyhv/3475879781.png",
+            "https://i.ibb.co/hJ24sFTr/3730286730.png",
+            "https://i.ibb.co/DHvqS7KT/3785438583.png",
+            "https://i.ibb.co/7wTSRwk/3894794004.png",
+            "https://i.ibb.co/hFcgpgyb/4074361210.png",
+            "https://i.ibb.co/5gdxMh9n/3418282391.png"
+        ];
+        
+        const livingImages = [
+            "https://i.ibb.co/B5tVPtdM/184338635.png",
+            "https://i.ibb.co/JwrNMSTg/476385083.png",
+            "https://i.ibb.co/vNtWGCP/897619525.png",
+            "https://i.ibb.co/PvWhhRYJ/946105979.png",
+            "https://i.ibb.co/m5LRcwt6/1128936184.png",
+            "https://i.ibb.co/3Y5hmb82/2035305226.png",
+            "https://i.ibb.co/5hBFb42b/2098835307.png",
+            "https://i.ibb.co/DDHm4nSN/3396104107.png",
+            "https://i.ibb.co/MDQs95r0/3442394923.png",
+            "https://i.ibb.co/JjBLC3nv/3506626448.png",
+            "https://i.ibb.co/sp9GkMVH/3952345535.png",
+            "https://i.ibb.co/SwpLQjWG/84586883.png",
+            "https://i.ibb.co/BVqyp0yS/90362871.png",
+            "https://i.ibb.co/MyRRM0Dz/114667139.png",
+            "https://i.ibb.co/Q3Mx02y6/123222252.png",
+            "https://i.ibb.co/yFQHJXCb/179056832.png",
+            "https://i.ibb.co/8gZ8McNT/181966978.png",
+            "https://i.ibb.co/jkQPWFDM/197404419.png",
+            "https://i.ibb.co/0pZqqNkM/207444422.png",
+            "https://i.ibb.co/dsWmSdzL/247214448.png",
+            "https://i.ibb.co/ZRyqmbNR/248298275.png",
+            "https://i.ibb.co/wNbhxXzK/279676121.png",
+            "https://i.ibb.co/xNP1chR/287207821.png",
+            "https://i.ibb.co/5gWck84r/311837187.png",
+            "https://i.ibb.co/HT8M670j/315388261.png",
+            "https://i.ibb.co/8DcMFTqX/320870750.png",
+            "https://i.ibb.co/S4K8jtKD/333426034.png",
+            "https://i.ibb.co/kgXJBY5b/372886483.png",
+            "https://i.ibb.co/gMzVVMPD/387333817.png",
+            "https://i.ibb.co/P8KT8HX/402519268.png",
+            "https://i.ibb.co/60ybxRG4/405691594.png",
+            "https://i.ibb.co/v4N6PZtK/440879121.png",
+            "https://i.ibb.co/Z1zFbdXK/461884527.png",
+            "https://i.ibb.co/Nn1c8f9r/491887414.png",
+            "https://i.ibb.co/B2Bdc8c3/519532488.png",
+            "https://i.ibb.co/36Cr8bp/556796332.png",
+            "https://i.ibb.co/HcPxt6q/574892903.png",
+            "https://i.ibb.co/dwM4tKy8/738973859.png",
+            "https://i.ibb.co/N2fch7n7/871545382.png",
+            "https://i.ibb.co/8gfC8HYj/892875267.png",
+            "https://i.ibb.co/zVqR1Kmw/905845477.png",
+            "https://i.ibb.co/RpvHx9f3/963696902.png",
+            "https://i.ibb.co/8gfC8HYj/964824091.png",
+            "https://i.ibb.co/pB6rDBF7/1052325266.png",
+            "https://i.ibb.co/hJ1tdmNQ/1058181267.png",
+            "https://i.ibb.co/nsQTmwVB/1092324215.png",
+            "https://i.ibb.co/ksQL2vWP/1233100368.png",
+            "https://i.ibb.co/tM5PbS3j/1258915368.png",
+            "https://i.ibb.co/Gf2c6wfV/1399362650.png",
+            "https://i.ibb.co/HffqDMRB/1450068776.png",
+            "https://i.ibb.co/hJFqfNQx/1454786143.png",
+            "https://i.ibb.co/7NyH5Z6v/1481432994.png",
+            "https://i.ibb.co/ynPdRktv/1520884469.png",
+            "https://i.ibb.co/r2GYsDzS/1559273131.png",
+            "https://i.ibb.co/Sp26Xbn/1559616760.png",
+            "https://i.ibb.co/Kcq0GFjH/1566831711.png",
+            "https://i.ibb.co/4vDsnWf/1603011676.png",
+            "https://i.ibb.co/V07YHJqN/1603302778.png",
+            "https://i.ibb.co/JW4SZZtZ/1657624295.png",
+            "https://i.ibb.co/wNfmQfHr/1827387764.png",
+            "https://i.ibb.co/9mF6Rpd6/1935551248.png",
+            "https://i.ibb.co/kgC0xhQ8/1964335838.png",
+            "https://i.ibb.co/kgC0xhQ8/2000847942.png",
+            "https://i.ibb.co/tT3K9VFP/2044903955.png",
+            "https://i.ibb.co/nMmPKH0D/2086842110.png",
+            "https://i.ibb.co/QFkdLTjd/2088595059.png",
+            "https://i.ibb.co/tT3K9VFP/2133077776.png",
+            "https://i.ibb.co/zH5BsjrF/2294518628.png",
+            "https://i.ibb.co/xq58M92x/2344122423.png",
+            "https://i.ibb.co/TBTwYfPd/2367491482.png",
+            "https://i.ibb.co/XrD9tN9y/2424203969.png",
+            "https://i.ibb.co/QjjSztqk/2570419559.png",
+            "https://i.ibb.co/9m3Ht0tX/2601107683.png",
+            "https://i.ibb.co/RTvSPfcr/2627440970.png",
+            "https://i.ibb.co/NnsZsSk5/2644085561.png",
+            "https://i.ibb.co/0RzXGrsq/2669126056.png",
+            "https://i.ibb.co/8n067pQ0/2677630339.png",
+            "https://i.ibb.co/dw94ksCC/2691395989.png",
+            "https://i.ibb.co/0RTstKGj/2701823172.png",
+            "https://i.ibb.co/v4hWWD1m/2709889426.png",
+            "https://i.ibb.co/7xDfmc1m/2829283843.png",
+            "https://i.ibb.co/W4Hfs6kB/2879101991.png",
+            "https://i.ibb.co/b5Z0m4m1/2905165780.png",
+            "https://i.ibb.co/gLQ3S3tX/2949634654.png",
+            "https://i.ibb.co/rXdKN6v/2997237819.png",
+            "https://i.ibb.co/sd1GkJpT/3051792407.png",
+            "https://i.ibb.co/pBNwCRsF/3065932398.png",
+            "https://i.ibb.co/fYz2mPnt/3095526531.png",
+            "https://i.ibb.co/fV9SHsyD/3105461675.png",
+            "https://i.ibb.co/sJkHwVtf/3122576810.png",
+            "https://i.ibb.co/twmmj7nh/3170630440.png",
+            "https://i.ibb.co/vvRPFyj9/3365900936.png",
+            "https://i.ibb.co/0RhzqFVv/3408842890.png",
+            "https://i.ibb.co/vxr1qGPQ/3450234215.png",
+            "https://i.ibb.co/vxr1qGPQ/3461041886.png",
+            "https://i.ibb.co/rR9Gr2ys/3534192149.png",
+            "https://i.ibb.co/gZz1LXvY/3570942073.png",
+            "https://i.ibb.co/Fkmf1WLt/3615329390.png",
+            "https://i.ibb.co/KjmDDVMj/3638463967.png",
+            "https://i.ibb.co/VYPzQKJK/3726688658.png",
+            "https://i.ibb.co/dJ2SgdGL/3741710534.png",
+            "https://i.ibb.co/6J4G8yVb/3800044182.png",
+            "https://i.ibb.co/PZ4FJZmw/3845670667.png",
+            "https://i.ibb.co/dscYTxvt/3852488840.png",
+            "https://i.ibb.co/KxzFm1p4/3873753471.png",
+            "https://i.ibb.co/G3FfPMXf/3878600977.png",
+            "https://i.ibb.co/1YRFrbBw/3942933164.png",
+            "https://i.ibb.co/QvwGFpw7/3967778583.png",
+            "https://i.ibb.co/pBJpBHm1/3977603778.png",
+            "https://i.ibb.co/jkHqT2Mr/4013564673.png",
+            "https://i.ibb.co/7NSJYw24/4018051291.png",
+            "https://i.ibb.co/YFTDg1kh/4039905276.png",
+            "https://i.ibb.co/whtDtN1d/4051379372.png",
+            "https://i.ibb.co/zTvzKrn9/4109797903.png",
+            "https://i.ibb.co/jk6SMBzs/4155408998.png",
+            "https://i.ibb.co/SXMZW0ZK/4189523509.png",
+            "https://i.ibb.co/35nbDJgt/4220998263.png",
+            "https://i.ibb.co/4w1cj5z8/4269806661.png",
+            "https://i.ibb.co/mCYBpwn6/4277639807.png",
+            "https://i.ibb.co/rfqHpWN4/489074403.png",
+            "https://i.ibb.co/J96c587/517929703.png",
+            "https://i.ibb.co/ch3mq91Y/897578532.png",
+            "https://i.ibb.co/B2CrCrLB/973260513.png",
+            "https://i.ibb.co/MJ0KhD1/1739914970.png",
+            "https://i.ibb.co/KjJmCYXC/1825786016.png",
+            "https://i.ibb.co/DHfVRqTB/2896392917.png",
+            "https://i.ibb.co/nNMWJkMt/3052684842.png",
+            "https://i.ibb.co/8nj6Q73d/4094526433.png"
+        ];
+        
+        // 新增的商业设计图片
+        const commercialImages = [
+            "https://i.ibb.co/twYZDvPt/4084662044.png",
+            "https://i.ibb.co/rRxc63Dn/4084853520.png",
+            "https://i.ibb.co/G3xMtFBQ/549408301.png",
+            "https://i.ibb.co/fVG3LHC0/1123773256.png",
+            "https://i.ibb.co/jvC7Sb2V/1247845252.png",
+            "https://i.ibb.co/qYW4f2R8/1761572268.png",
+            "https://i.ibb.co/MkYgp7rZ/3557518063.png",
+            "https://i.ibb.co/mC1xPChR/9757682.png",
+            "https://i.ibb.co/tptcp94B/50173046.png",
+            "https://i.ibb.co/TDzqRGyR/56320921.png",
+            "https://i.ibb.co/99C4FGnP/68641864.png",
+            "https://i.ibb.co/d0PhFtsY/133513692.png",
+            "https://i.ibb.co/vCGTBGnF/202364994.png",
+            "https://i.ibb.co/Y4QK3kHT/215895203.png",
+            "https://i.ibb.co/Gfd58ZpL/269777001.png",
+            "https://i.ibb.co/5DtkJNm/270954107.png",
+            "https://i.ibb.co/4nJqKRcx/337026419.png",
+            "https://i.ibb.co/chB6hk7m/491822782.png",
+            "https://i.ibb.co/C3yGNVJx/528742889.png",
+            "https://i.ibb.co/tTMxx949/534192751.png",
+            "https://i.ibb.co/Gf5j6xnT/556880917.png",
+            "https://i.ibb.co/VWM0t0F1/564952869.png",
+            "https://i.ibb.co/kgWKTgRB/572589562.png",
+            "https://i.ibb.co/CsDD2H4H/615895623.png",
+            "https://i.ibb.co/KjxWWdk3/623980866.png",
+            "https://i.ibb.co/JwqJWRvt/661571789.png",
+            "https://i.ibb.co/k2K2vYWb/733060023.png",
+            "https://i.ibb.co/p6mRYXmX/746359119.png",
+            "https://i.ibb.co/3gWqjsF/855713879.png",
+            "https://i.ibb.co/Q359fSsT/878440719.png",
+            "https://i.ibb.co/v4XZqG14/1001884891.png",
+            "https://i.ibb.co/mrbNQbwh/1037119621.png",
+            "https://i.ibb.co/vCVHMZrS/1048011559.png",
+            "https://i.ibb.co/1YrwSjJh/1067543644.png",
+            "https://i.ibb.co/3mtpY5z4/1112574270.png",
+            "https://i.ibb.co/FqhZw7mZ/1114701381.png",
+            "https://i.ibb.co/Vc7bPstb/1215435936.png",
+            "https://i.ibb.co/zVRvgc0s/1258505656.png",
+            "https://i.ibb.co/nNDQwSdw/1261220789.png",
+            "https://i.ibb.co/tMn9rZxR/1295706773.png",
+            "https://i.ibb.co/zTtw46yZ/1322338158.png",
+            "https://i.ibb.co/pjGN7GSh/1330695054.png",
+            "https://i.ibb.co/zWKxRKvJ/1333127647.png",
+            "https://i.ibb.co/h1ZBjvQ6/1349314392.png",
+            "https://i.ibb.co/Y7XWJK9F/1353124008.png",
+            "https://i.ibb.co/tM4c4kCL/1357744326.png",
+            "https://i.ibb.co/Gz1m5Hv/1402438925.png",
+            "https://i.ibb.co/LhqPxMwy/1411409771.png",
+            "https://i.ibb.co/Xr2wbC1s/1474225916.png",
+            "https://i.ibb.co/XZW8GKPN/1534936338.png",
+            "https://i.ibb.co/DfmTn6hT/1588591818.png",
+            "https://i.ibb.co/jZj7xLWY/1592333181.png",
+            "https://i.ibb.co/KkBgd64/1705163700.png",
+            "https://i.ibb.co/mrycWYNg/1725847348.png",
+            "https://i.ibb.co/VPdSBWk/1781698410.png",
+            "https://i.ibb.co/HTrm5syZ/1785393324.png",
+            "https://i.ibb.co/d0XxmHrp/1801126009.png",
+            "https://i.ibb.co/wrLvsDbf/1852175535.png",
+            "https://i.ibb.co/LzHgnQKm/1862842737.png",
+            "https://i.ibb.co/svwkxFHg/1894526870.png",
+            "https://i.ibb.co/FkF4vz57/1956966289.png",
+            "https://i.ibb.co/20LVkjNN/1997645980.png",
+            "https://i.ibb.co/Q3wJf4Q0/2007168336.png",
+            "https://i.ibb.co/273jtb05/2033955512.png",
+            "https://i.ibb.co/Zz04tpNk/2041158667.png",
+            "https://i.ibb.co/c073cPQ/2073507371.png",
+            "https://i.ibb.co/Vph2SnPv/2077253371.png",
+            "https://i.ibb.co/NngLdX9j/2090212610.png",
+            "https://i.ibb.co/D6Xwx8n/2156459450.png",
+            "https://i.ibb.co/zhTBrv9q/2178781188.png",
+            "https://i.ibb.co/TBpPxy9y/2198461811.png",
+            "https://i.ibb.co/bgzYNyhj/2216062942.png",
+            "https://i.ibb.co/XxzPqNDc/2225015605.png",
+            "https://i.ibb.co/C5nXnrww/2253546581.png",
+            "https://i.ibb.co/Q77Z9dzg/2271570203.png",
+            "https://i.ibb.co/RW0znJT/2290811188.png",
+            "https://i.ibb.co/ZRFntm8n/2317469133.png",
+            "https://i.ibb.co/CsMc9Yym/2332350384.png",
+            "https://i.ibb.co/prPLL1J3/2343184014.png",
+            "https://i.ibb.co/xt6x1SLt/2355520161.png",
+            "https://i.ibb.co/gFVxqB6S/2389692112.png",
+            "https://i.ibb.co/Dfwq66rr/2413643309.png",
+            "https://i.ibb.co/849ZZ5D7/2420690751.png",
+            "https://i.ibb.co/hxRFMQFr/2427219223.png",
+            "https://i.ibb.co/YFJBt3XF/2454900411.png",
+            "https://i.ibb.co/SwpQDKrX/2502995871.png",
+            "https://i.ibb.co/39bWysWd/2526763904.png",
+            "https://i.ibb.co/Qv9Rx5J8/2539733236.png",
+            "https://i.ibb.co/NngVD6s3/2545497201.png",
+            "https://i.ibb.co/TxcRWX34/2570052079.png",
+            "https://i.ibb.co/xtv7157R/2714001195.png",
+            "https://i.ibb.co/W48mgR1X/2718413030.png",
+            "https://i.ibb.co/xqPVNZxN/2718504918.png",
+            "https://i.ibb.co/qM3YHLtB/2726042451.png",
+            "https://i.ibb.co/qMmVy1V1/2726914746.png",
+            "https://i.ibb.co/qLSxXRHv/2753334043.png",
+            "https://i.ibb.co/cc0dcVJ0/2781426989.png",
+            "https://i.ibb.co/j9FFK1H0/2789912832.png",
+            "https://i.ibb.co/Q7Bz3G0n/2813241759.png",
+            "https://i.ibb.co/GfxmTxdX/2823319071.png",
+            "https://i.ibb.co/FkLNQFy7/2852593688.png",
+            "https://i.ibb.co/p6LymXLX/2908267215.png",
+            "https://i.ibb.co/pjG5B2j4/2909811859.png",
+            "https://i.ibb.co/kZ3sxp0/2998751554.png",
+            "https://i.ibb.co/TMMGcdTz/3024981834.png",
+            "https://i.ibb.co/mCy9zrLC/3057737054.png",
+            "https://i.ibb.co/7xNFzgkp/3068286897.png",
+            "https://i.ibb.co/pvgjSmmG/3105663260.png",
+            "https://i.ibb.co/ZpmKWQKx/3134010000.png",
+            "https://i.ibb.co/0Rcg3Xwx/3269440160.png",
+            "https://i.ibb.co/qLWsVdzD/3291270077.png",
+            "https://i.ibb.co/9m47Y71y/3299355222.png",
+            "https://i.ibb.co/9mJH8QCt/3317543836.png",
+            "https://i.ibb.co/3mfgMkkf/3363386786.png",
+            "https://i.ibb.co/YzLtmY2/3373356766.png",
+            "https://i.ibb.co/tMBDYtGL/3393161365.png",
+            "https://i.ibb.co/xqYrK9R9/3404862743.png",
+            "https://i.ibb.co/LdhxPGG2/3437174574.png",
+            "https://i.ibb.co/1JZBHGkn/3468519249.png",
+            "https://i.ibb.co/svfBnTd2/3471960508.png",
+            "https://i.ibb.co/gZSBhqJ3/3487836660.png",
+            "https://i.ibb.co/BHzwHNZW/3488910149.png",
+            "https://i.ibb.co/vvd2f1km/3493531830.png",
+            "https://i.ibb.co/397wpw7p/3521525838.png",
+            "https://i.ibb.co/wNLGq9YN/3617185766.png",
+            "https://i.ibb.co/jkwzGWxm/3658091736.png",
+            "https://i.ibb.co/M5pGR6nH/3765644945.png",
+            "https://i.ibb.co/0jjB9HrB/3879415813.png",
+            "https://i.ibb.co/d45W4LpM/3885747957.png",
+            "https://i.ibb.co/qMW0DsPM/3895394529.png",
+            "https://i.ibb.co/Xr1LdRHD/3929868300.png",
+            "https://i.ibb.co/WwNykGV/4009983463.png",
+            "https://i.ibb.co/gLL5k0nX/4019447987.png",
+            "https://i.ibb.co/twd3nNL4/4024448276.png",
+            "https://i.ibb.co/hFTymp19/4074030287.png",
+            "https://i.ibb.co/sv7NVrn5/4075605028.png",
+            "https://i.ibb.co/YBpPh0Gc/4115131832.png",
+            "https://i.ibb.co/5WG7xcW2/4171426610.png",
+            "https://i.ibb.co/YT17gJLM/4192428746.png",
+            "https://i.ibb.co/zhMmFfZD/4207030754.png",
+            "https://i.ibb.co/Y7Hdg5wR/4219939594.png",
+            "https://i.ibb.co/3YvN31ZT/4239326984.png",
+            "https://i.ibb.co/CKCgvP81/4285201697.png",
+            "https://i.ibb.co/tT2vqGTb/882853785.png",
+            "https://i.ibb.co/cSBkxt9D/933436396.png",
+            "https://i.ibb.co/hxcrRJ00/2348063403.png",
+            "https://i.ibb.co/Q3Hqp3DQ/2430949320.png",
+            "https://i.ibb.co/qLsMtD0D/2580199658.png",
+            "https://i.ibb.co/whbWdVqt/3665575872.png",
+            "https://i.ibb.co/931K1JND/731209458.png",
+            "https://i.ibb.co/3YMW4hLd/1414435693.png",
+            "https://i.ibb.co/Z1SWwtZY/1670444833.png",
+            "https://i.ibb.co/9H9Sc47R/1689263522.png",
+            "https://i.ibb.co/KcZJS217/1800904963.png",
+            "https://i.ibb.co/n8qrGsBb/2111243669.png",
+            "https://i.ibb.co/q3qWPzzK/2307429599.png",
+            "https://i.ibb.co/x88kGRWB/2560378935.png",
+            "https://i.ibb.co/qLxNxjLf/2644892890.png",
+            "https://i.ibb.co/LhHtWd6J/3207516161.png",
+            "https://i.ibb.co/tPHLFw5w/3227420176.png",
+            "https://i.ibb.co/BH9vWSnQ/3402536854.png"
+        ];
+        
+        // 新增的others分类图片
+        const othersImages = [
+            "https://i.ibb.co/bgThfMCB/825358712.jpg",
+            "https://i.ibb.co/FbCP5zC0/871545382-B.png",
+            "https://i.ibb.co/5PPkD5p/1244195419.png",
+            "https://i.ibb.co/CKNDcVvg/1431942893.png",
+            "https://i.ibb.co/GQCSCj4d/1905357880.png",
+            "https://i.ibb.co/60Jnyvrj/1920682907.png",
+            "https://i.ibb.co/bMZ8rm12/2441247942.png",
+            "https://i.ibb.co/Cp843C2X/2526274972.png",
+            "https://i.ibb.co/7J0rksMN/1717010808.png",
+            "https://i.ibb.co/HfLqr3CH/2196265826.png",
+            "https://i.ibb.co/cKjchNmd/2416123629.png",
+            "https://i.ibb.co/DD8fpn08/2693161274.png",
+            "https://i.ibb.co/pvTZt8Q9/2851183379.png",
+            "https://i.ibb.co/W49fGt07/2874038968.png",
+            "https://i.ibb.co/zV7dZ4mD/2991972854.png",
+            "https://i.ibb.co/Mkjqh4SK/3124784120.png",
+            "https://i.ibb.co/mw03xnR/3355848370.png",
+            "https://i.ibb.co/FLnzVVyf/3837177915.png",
+            "https://i.ibb.co/DDf2Lgpz/4106027827.png",
+            "https://i.ibb.co/XZfjX46z/4182712919.png",
+            "https://i.ibb.co/93t14KZb/4220558454.png",
+            "https://i.ibb.co/7xc35C83/4235218278.png",
+            "https://i.ibb.co/nVmnsJb/2024129148-A.png",
+            "https://i.ibb.co/KxTbhH7n/2024129282-A.png",
+            "https://i.ibb.co/Df8XqcXv/2620515228.png",
+            "https://i.ibb.co/Dg92tPTm/4193424908.png",
+            "https://i.ibb.co/Q7nWWLbm/20135405.png",
+            "https://i.ibb.co/p89vvP6/80994063.png",
+            "https://i.ibb.co/m59wnCyH/140847071.png",
+            "https://i.ibb.co/V0KRTvLT/318604001.png",
+            "https://i.ibb.co/60V7h9Xt/454977421.png",
+            "https://i.ibb.co/cS3sDHZm/474720380.png",
+            "https://i.ibb.co/rR0hjYgk/475861473.png",
+            "https://i.ibb.co/FSdh8z3/492623390.png",
+            "https://i.ibb.co/FLLVdfDQ/551042750.png",
+            "https://i.ibb.co/pr2R22DJ/551253226.png",
+            "https://i.ibb.co/Fq3vfkD0/551317455.png",
+            "https://i.ibb.co/prWFxRDT/611779117.png",
+            "https://i.ibb.co/08dHPcZ/619840681.png",
+            "https://i.ibb.co/q3FvgmPX/908192930.png",
+            "https://i.ibb.co/Xxg5nJyr/967021398.png",
+            "https://i.ibb.co/rC2x40w/1162640477.png",
+            "https://i.ibb.co/mVH7xdvF/1258417038.png",
+            "https://i.ibb.co/MkfDN0yM/1309516909.png",
+            "https://i.ibb.co/nMNTsnHy/1327668771.png",
+            "https://i.ibb.co/20G9HZqF/1394441168.png",
+            "https://i.ibb.co/tpJQSmXt/1492074778.png",
+            "https://i.ibb.co/1fRJmdQZ/1516188986.png",
+            "https://i.ibb.co/zWCxg4Z6/1770048603.png",
+            "https://i.ibb.co/8Vbk0TF/1788109939.png",
+            "https://i.ibb.co/whzXznnR/1884213140.png",
+            "https://i.ibb.co/KcJQrWzJ/1923454699.png",
+            "https://i.ibb.co/ccTVf03n/1937220151.png",
+            "https://i.ibb.co/qMm6XGzM/1976998736.png",
+            "https://i.ibb.co/dwvJ317K/1987317405.png",
+            "https://i.ibb.co/7xCc6Z9x/2036100493.png",
+            "https://i.ibb.co/0yqtsjLs/2151143308.png",
+            "https://i.ibb.co/nXrk4Pm/2161784830.png",
+            "https://i.ibb.co/NkdSgBJ/2181476703.png",
+            "https://i.ibb.co/Z6KnqWTW/2248058654.png",
+            "https://i.ibb.co/cprY9sr/2264833765.png",
+            "https://i.ibb.co/9mJqw03Y/2335827049.png",
+            "https://i.ibb.co/8WqZX1T/2390397646.png",
+            "https://i.ibb.co/cVr6yKt/2423854061.png",
+            "https://i.ibb.co/QvySHSYs/2435619927.png",
+            "https://i.ibb.co/bgZ2Ppxm/2467119907.png",
+            "https://i.ibb.co/KjLhYxLM/2467318401.png",
+            "https://i.ibb.co/Mxz9Qy59/2681639045.png",
+            "https://i.ibb.co/S7GkyjWc/2687962233.png",
+            "https://i.ibb.co/v6mDM2hq/2791543140.png",
+            "https://i.ibb.co/JRW8ZsMH/2802540739.png",
+            "https://i.ibb.co/NdnwLMmN/2869199594.png",
+            "https://i.ibb.co/kVJ8X2MR/3001601246.png",
+            "https://i.ibb.co/RTfD75XX/3457246354.png",
+            "https://i.ibb.co/fdPjsWNn/3520490740.png",
+            "https://i.ibb.co/JWY9CnKQ/3524781183.png",
+            "https://i.ibb.co/9d8gh8n/3526428653-C.png",
+            "https://i.ibb.co/N2p9X1HH/3570911544.png",
+            "https://i.ibb.co/KnPN3jD/3620856016.png",
+            "https://i.ibb.co/397jdnV7/3886786796.png",
+            "https://i.ibb.co/b8sjWt0/4175381507.png",
+            "https://i.ibb.co/whKdpx57/4236285762.png",
+            "https://i.ibb.co/F4Ccc8Yn/4241382295.png",
+            "https://i.ibb.co/7thhzC3v/347920618.png",
+            "https://i.ibb.co/GQMJH4f6/540143021.png",
+            "https://i.ibb.co/h1xD00Yw/2598262893.png",
+            "https://i.ibb.co/RGNB5CL7/2663730553.png",
+            "https://i.ibb.co/DPkrm9LL/3089614762.png",
+            "https://i.ibb.co/0pTLV04v/2373078594.png"
+        ];
+        
+        // 新增的close-up分类图片
+        const closeupImages = [
+            "https://i.ibb.co/jkHGz4Zr/66430952.png",
+            "https://i.ibb.co/rXnYTwW/4064327939.png",
+            "https://i.ibb.co/21RfzT0r/4108662724.png",
+            "https://i.ibb.co/3mP81D0F/1831536020.png",
+            "https://i.ibb.co/FbnxrZ6F/2548216741.png",
+            "https://i.ibb.co/bMVxxfy5/1810086660.png",
+            "https://i.ibb.co/8ghZ6z05/2208086579.png",
+            "https://i.ibb.co/bgpyQXkg/2433425235.png",
+            "https://i.ibb.co/9kwBj1tD/2582907498.png",
+            "https://i.ibb.co/NdW74qJk/3393165285.png",
+            "https://i.ibb.co/d00TCmKM/4023327715.png",
+            "https://i.ibb.co/RG0xC8w9/3825948828.png",
+            "https://i.ibb.co/9m3xfbSN/476381431.png",
+            "https://i.ibb.co/Z6JFMZkq/632308428.png",
+            "https://i.ibb.co/2BJL0wG/699042468.png",
+            "https://i.ibb.co/M5N6kWF1/726821795.png",
+            "https://i.ibb.co/sdwy1btk/737482485.png",
+            "https://i.ibb.co/rfT0mq1B/793004789.png",
+            "https://i.ibb.co/jvqwFbWL/1023948239.png",
+            "https://i.ibb.co/8qy6nsQ/1115003429.png",
+            "https://i.ibb.co/wFkrZNF5/1229691107.png",
+            "https://i.ibb.co/mV2ks3fP/1267982215.png",
+            "https://i.ibb.co/fz76S81h/1317783502.png",
+            "https://i.ibb.co/whzyNSdq/1679732750.png",
+            "https://i.ibb.co/TqqjPgP9/1759374676.png",
+            "https://i.ibb.co/7NYN2LMb/1797572940.png",
+            "https://i.ibb.co/B5mSnq4K/1902547415.png",
+            "https://i.ibb.co/QvxvQ4J1/2572048024.png",
+            "https://i.ibb.co/JW4BBXyH/2678958234.png",
+            "https://i.ibb.co/XZVrkvht/2961573139.png",
+            "https://i.ibb.co/PGX4yG6W/2972381415.png",
+            "https://i.ibb.co/sdfjRHnC/3131079696.png",
+            "https://i.ibb.co/PGG4FFLd/3163612266.png",
+            "https://i.ibb.co/DD3dvd2V/3241630418.png",
+            "https://i.ibb.co/9m2fg0gQ/3259215955.png",
+            "https://i.ibb.co/KpFwP59d/3259512409.png",
+            "https://i.ibb.co/3mWP8qKv/3325581598.png",
+            "https://i.ibb.co/DgGqbgMf/3456146374.png",
+            "https://i.ibb.co/gZyLHYWx/3625436121.png",
+            "https://i.ibb.co/G43tVdHp/3637011989.png",
+            "https://i.ibb.co/5WHNY4Wv/3944362482.png",
+            "https://i.ibb.co/mrXntvDY/4185668699.png",
+            "https://i.ibb.co/0Rw9919F/4274485758.png",
+            "https://i.ibb.co/W4HFT266/2377836182.png",
+            "https://i.ibb.co/N2cPjFL6/2404911177.png",
+            "https://i.ibb.co/N6B1n1VN/4202826580.png"
+        ];
+        
+        // 新增的outdoor分类图片
+        const outdoorImages = [
+            "https://i.ibb.co/jZqVCYKV/2024027018-A.png",
+            "https://i.ibb.co/bg74ZKHr/2024251603-A.png",
+            "https://i.ibb.co/ZpvHLg3C/2024251702-A.png",
+            "https://i.ibb.co/cX7NkDnT/2024251801-A.png",
+            "https://i.ibb.co/RGH5VQQp/190230512.png",
+            "https://i.ibb.co/spyBcbX6/1085305941.png",
+            "https://i.ibb.co/Mkj7pn3w/2024322084-A.png",
+            "https://i.ibb.co/LDzNsTYV/2024322104-A.png",
+            "https://i.ibb.co/6RbBvbxF/2049703702.png",
+            "https://i.ibb.co/XfvzkMPC/2404066911.png",
+            "https://i.ibb.co/v692F461/3016712840.png",
+            "https://i.ibb.co/dwC1Hsmy/3204010033.png",
+            "https://i.ibb.co/Xx4z621z/3246789041.png",
+            "https://i.ibb.co/ycjPkXKm/3310391906.png",
+            "https://i.ibb.co/79w8pBF/3559516700.png",
+            "https://i.ibb.co/KxSr0LD6/3635177123.png",
+            "https://i.ibb.co/xKBTGsmn/3787769367.png",
+            "https://i.ibb.co/V0yvwWrP/3991104196.png",
+            "https://i.ibb.co/Q7zHv6Mv/4033134098.png",
+            "https://i.ibb.co/7tgm5ffN/4238091681.png",
+            "https://i.ibb.co/Y4LjGnGs/2024322033-A.png"
+        ];
+        
+        // 新增的entry分类图片
+        const entryImages = [
+            "https://i.ibb.co/Xk28CpwJ/273483427.png",
+            "https://i.ibb.co/1YH1GM73/515440694.png",
+            "https://i.ibb.co/99zL99Pr/2737333494.png",
+            "https://i.ibb.co/PsL1m9sB/3119306702.png",
+            "https://i.ibb.co/7JQ5vmvB/2024038036-A.png",
+            "https://i.ibb.co/MDZ6w3Jg/2024038047-A.png",
+            "https://i.ibb.co/prnPPZ1J/2024038069-A.png",
+            "https://i.ibb.co/jkGZLbn0/2024038082-A.png",
+            "https://i.ibb.co/v6cn5crG/2024038093-A.png",
+            "https://i.ibb.co/HL4L8HnD/344575001.png",
+            "https://i.ibb.co/dyr2WVB/646173489.png",
+            "https://i.ibb.co/yczGNfPQ/1498625568.png",
+            "https://i.ibb.co/RGmD26CR/1935668998.png",
+            "https://i.ibb.co/xKrW0KfX/2010695679.png",
+            "https://i.ibb.co/5hYvF9Vz/2024038014-A.png",
+            "https://i.ibb.co/84c7BMLQ/2024038025-A.png",
+            "https://i.ibb.co/5XbGtjKJ/2024038058-A.png",
+            "https://i.ibb.co/NgZMQr4F/2024038071-A.png",
+            "https://i.ibb.co/rRkhJYH4/2024322045-A.png",
+            "https://i.ibb.co/Z9T7BBc/2024322056-A.png",
+            "https://i.ibb.co/KxmdSKNz/2024322062-A.png",
+            "https://i.ibb.co/PGzS8b3k/2024322072-A.png",
+            "https://i.ibb.co/zTzbvLGd/2024322098-A.png",
+            "https://i.ibb.co/qYcPq0kr/2336910649.png",
+            "https://i.ibb.co/FbJvSX7G/2897387216.png",
+            "https://i.ibb.co/sc5yrwL/3002879724.png",
+            "https://i.ibb.co/DH85K4qB/3490181163.png",
+            "https://i.ibb.co/8DrZRTr9/3519764791.png"
+        ];
+        
+        // 新增的closets分类图片
+        const closetsImages = [
+            "https://i.ibb.co/6RkRjn6N/2991425413.png",
+            "https://i.ibb.co/QFjRq3Dr/1332531824.png",
+            "https://i.ibb.co/QjDkVbtL/1792598076.png",
+            "https://i.ibb.co/WWdySJ9D/2121428775.png",
+            "https://i.ibb.co/TxBz2LrQ/2724409896.png",
+            "https://i.ibb.co/G4jZk1jR/2959869749.png"
+        ];
+        
+        // 新增的bedroom分类图片
+        const bedroomImages = [
+            "https://i.ibb.co/Q7b1rvFs/325326632-C.png",
+            "https://i.ibb.co/zH2cdgFR/325632236-C.png",
+            "https://i.ibb.co/7x9mVNTh/445125332-C.png",
+            "https://i.ibb.co/9mqHbFy1/517569753.png",
+            "https://i.ibb.co/WvVWspp2/1166610684.png",
+            "https://i.ibb.co/xSVvL0MC/1492844040.png",
+            "https://i.ibb.co/ccMHM64f/2388927884.png",
+            "https://i.ibb.co/KxBK99VR/2436190052.png",
+            "https://i.ibb.co/xSLqtM1P/2684503980.png",
+            "https://i.ibb.co/fYk5hnnq/3133425666.png",
+            "https://i.ibb.co/h1XnxN9T/3444818570.png",
+            "https://i.ibb.co/6cvrqJJG/3908569079.png",
+            "https://i.ibb.co/0jWW9hBp/4238544465.png"
+        ];
+        
+        // 创建瀑布流项目
+        function createGalleryItems() {
+            const masonryGrid = document.getElementById('masonry-grid');
+            const loadingIndicator = document.querySelector('.loading');
+            
+            // 清空现有内容
+            masonryGrid.innerHTML = '';
+            
+            // 创建图片项的函数
+            const createItem = (imgUrl, category) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.dataset.category = category;
+                
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.alt = `${category} design`;
+                img.draggable = false; // 禁止拖拽
+                img.onerror = () => {
+                    // 图片加载失败时显示占位符
+                    img.style.display = 'none';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'image-error';
+                    errorDiv.textContent = '加载失败';
+                    item.appendChild(errorDiv);
+                };
+                
+                item.appendChild(img);
+                
+                // 添加图片保护层
+                const protector = document.createElement('div');
+                protector.className = 'image-protector';
+                protector.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showProtectionAlert();
+                });
+                item.appendChild(protector);
+                
+                masonryGrid.appendChild(item);
+                
+                // 延迟显示动画
+                setTimeout(() => {
+                    item.classList.add('visible');
+                }, 50);
+            };
+            
+            // 创建灯光设计图片项
+            lightingImages.forEach(imgUrl => {
+                createItem(imgUrl, 'lighting');
+            });
+            
+            // 创建浴室设计图片项
+            bathImages.forEach(imgUrl => {
+                createItem(imgUrl, 'bath');
+            });
+            
+            // 创建厨房设计图片项
+            kitchenImages.forEach(imgUrl => {
+                createItem(imgUrl, 'kitchen');
+            });
+            
+            // 创建餐厅设计图片项
+            diningImages.forEach(imgUrl => {
+                createItem(imgUrl, 'dining');
+            });
+            
+            // 创建客厅设计图片项
+            livingImages.forEach(imgUrl => {
+                createItem(imgUrl, 'living');
+            });
+            
+            // 创建商业设计图片项
+            commercialImages.forEach(imgUrl => {
+                createItem(imgUrl, 'commercial');
+            });
+            
+            // 创建其他分类图片项
+            othersImages.forEach(imgUrl => {
+                createItem(imgUrl, 'others');
+            });
+            
+            // 创建特写分类图片项
+            closeupImages.forEach(imgUrl => {
+                createItem(imgUrl, 'closeup');
+            });
+            
+            // 创建户外设计图片项
+            outdoorImages.forEach(imgUrl => {
+                createItem(imgUrl, 'outdoor');
+            });
+            
+            // 创建入口设计图片项
+            entryImages.forEach(imgUrl => {
+                createItem(imgUrl, 'entry');
+            });
+            
+            // 创建衣柜设计图片项
+            closetsImages.forEach(imgUrl => {
+                createItem(imgUrl, 'closets');
+            });
+            
+            // 创建卧室设计图片项
+            bedroomImages.forEach(imgUrl => {
+                createItem(imgUrl, 'bedroom');
+            });
+            
+            // 隐藏加载指示器
+            setTimeout(() => {
+                loadingIndicator.style.display = 'none';
+            }, 500);
+        }
+        
+        // 页面加载完成后创建瀑布流项目
+        document.addEventListener('DOMContentLoaded', () => {
+            createGalleryItems();
+            
+            // 添加分类按钮点击效果
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.category-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    
+                    // 给当前按钮添加active类
+                    this.classList.add('active');
+                    
+                    // 获取分类
+                    const category = this.dataset.category;
+                    
+                    // 过滤图片
+                    filterImages(category);
+                });
+            });
+            
+            // 初始化激活第一个按钮
+            setTimeout(() => {
+                document.querySelector('.category-btn[data-category="all"]').classList.add('active');
+            }, 100);
+            
+            // 全屏按钮事件
+            const fullscreenBtn = document.querySelector('.fullscreen-btn');
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // 添加键盘快捷键 F11 进入/退出全屏
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'F11') {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+            
+            // 隐藏提示
+            setTimeout(() => {
+                document.querySelector('.fullscreen-hint').style.display = 'none';
+            }, 5000);
+            
+            // 窗口大小变化时重新调整布局
+            window.addEventListener('resize', adjustLayout);
+            adjustLayout();
+            
+            // 全局禁用右键菜单
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                showProtectionAlert();
+            });
+        });
+        
+        // 过滤图片函数
+        function filterImages(category) {
+            const items = document.querySelectorAll('.gallery-item');
+            
+            items.forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = 'inline-block';
+                    setTimeout(() => {
+                        item.classList.add('visible');
+                    }, 50);
+                } else {
+                    item.classList.remove('visible');
+                    setTimeout(() => {
+                        item.style.display = 'none';
+                    }, 300);
+                }
+            });
+        }
+        
+        // 调整布局以适应不同屏幕
+        function adjustLayout() {
+            const windowHeight = window.innerHeight;
+            const windowWidth = window.innerWidth;
+            const galleryContainer = document.querySelector('.gallery-container');
+            
+            // 在小屏幕上调整瀑布流列数
+            if (windowWidth < 768) {
+                document.querySelector('.masonry').style.columnCount = '2';
+            } else if (windowWidth < 1024) {
+                document.querySelector('.masonry').style.columnCount = '3';
+            } else if (windowWidth < 1280) {
+                document.querySelector('.masonry').style.columnCount = '4';
+            } else {
+                document.querySelector('.masonry').style.columnCount = '5';
+            }
+            
+            // 在矮屏幕上调整高度
+            if (windowHeight < 700) {
+                galleryContainer.style.height = '65vh';
+            } else {
+                galleryContainer.style.height = '78.7vh';
+            }
+        }
+        
+        // 全屏切换函数
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
